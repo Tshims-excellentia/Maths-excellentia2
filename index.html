@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Mathématiques - Excellentia</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+            --success-color: #22c55e;
+            --danger-color: #ef4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            margin: 16px;
+            box-sizing: border-box;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+
+        .timer {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
+        .progress {
+            font-size: 0.95rem;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .question-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .option-btn {
+            background: #ffffff;
+            border: 2px solid var(--border-color);
+            padding: 14px 18px;
+            border-radius: 8px;
+            font-size: 1rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-color);
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--primary-color);
+            background: #eff6ff;
+        }
+
+        .option-btn.correct {
+            background: #dcfce7 !important;
+            border-color: var(--success-color) !important;
+            color: #166534;
+        }
+
+        .option-btn.incorrect {
+            background: #fee2e2 !important;
+            border-color: var(--danger-color) !important;
+            color: #991b1b;
+        }
+
+        .footer-nav {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn-next {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: none;
+        }
+
+        .btn-next:hover {
+            background: var(--primary-hover);
+        }
+
+        .results-card {
+            text-align: center;
+        }
+
+        .results-card h2 {
+            margin-bottom: 10px;
+        }
+
+        .score-display {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 20px 0;
+        }
+
+        .restart-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="app">
+        <!-- L'interface du quiz sera injectée ici par JavaScript -->
+    </div>
+
+    <script>
+        // Base de questions (Exemple structuré pour le programme Excellentia - extensible jusqu'à 100)
+        const questions = [
+            {
+                question: "Quel est l'ensemble de définition de la fonction f(x) = 1 / racine(x - 2) ?",
+                options: ["]-inf, 2[", "[2, +inf[", "]2, +inf[", "R \\ {2}"],
+                answer: 2
+            },
+            {
+                question: "Quelle est la valeur de la limite de (sin x) / x lorsque x tend vers 0 ?",
+                options: ["0", "1", "Infini", "Indéterminée"],
+                answer: 1
+            },
+            {
+                question: "Soit f(x) = x^3 - 3x + 2. Quelle est la valeur de la dérivée f'(x) ?",
+                options: ["3x^2 - 3", "3x^2 + 3", "x^2 - 3", "3x^2 - 3x"],
+                answer: 0
+            },
+            {
+                question: "Une fonction f est dite paire si pour tout x de son domaine :",
+                options: ["f(-x) = -f(x)", "f(-x) = f(x)", "f(x) = f(x-1)", "f(1/x) = f(x)"],
+                answer: 1
+            },
+            {
+                question: "Quelle est la solution de l'équation ln(x) = 1 ?",
+                options: ["1", "0", "e", "10"],
+                answer: 2
+            }
+            // Vous pouvez ajouter d'ici jusqu'à 100 questions en respectant la même structure JSON.
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 60;
+        let answerSelected = false;
+
+        const app = document.getElementById("app");
+
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            answerSelected = false;
+            clearInterval(timer);
+            timeLeft = 60;
+
+            if (currentQuestionIndex >= questions.length) {
+                showResults();
+                return;
+            }
+
+            const q = questions[currentQuestionIndex];
+
+            app.innerHTML = `
+                <div class="header">
+                    <span class="progress">Question ${currentQuestionIndex + 1} / ${questions.length}</span>
+                    <span class="timer" id="timer-display">⏱️ 60s</span>
+                </div>
+                <div class="question-text">${q.question}</div>
+                <div class="options-grid">
+                    ${q.options.map((opt, index) => `
+                        <button class="option-btn" onclick="selectOption(${index})">${opt}</button>
+                    `).join('')}
+                </div>
+                <div class="footer-nav">
+                    <button class="btn-next" id="next-btn" onclick="nextQuestion()">Question suivante</button>
+                </div>
+            `;
+
+            startTimer();
+        }
+
+        function startTimer() {
+            const timerDisplay = document.getElementById("timer-display");
+            timer = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = `⏱️ ${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    handleTimeout();
+                }
+            }, 1000);
+        }
+
+        function handleTimeout() {
+            if (answerSelected) return;
+            answerSelected = true;
+            const q = questions[currentQuestionIndex];
+            const buttons = document.querySelectorAll(".option-btn");
+            
+            buttons[q.answer].classList.add("correct");
+            buttons.forEach(btn => btn.disabled = true);
+
+            document.getElementById("next-btn").style.display = "block";
+        }
+
+        function selectOption(selectedIndex) {
+            if (answerSelected) return;
+            answerSelected = true;
+            clearInterval(timer);
+
+            const q = questions[currentQuestionIndex];
+            const buttons = document.querySelectorAll(".option-btn");
+
+            if (selectedIndex === q.answer) {
+                buttons[selectedIndex].classList.add("correct");
+                score++;
+            } else {
+                buttons[selectedIndex].classList.add("incorrect");
+                buttons[q.answer].classList.add("correct");
+            }
+
+            buttons.forEach(btn => btn.disabled = true);
+            document.getElementById("next-btn").style.display = "block";
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            loadQuestion();
+        }
+
+        function showResults() {
+            app.innerHTML = `
+                <div class="results-card">
+                    <h2>🎉 Quiz Terminé !</h2>
+                    <p>Voici votre score final pour cette session :</p>
+                    <div class="score-display">${score} / ${questions.length}</div>
+                    <p>${score >= questions.length * 0.8 ? 'Excellent travail ! Vous maîtrisez les bases.' : 'Continuez à réviser avec votre carnet d\'erreurs !'}</p>
+                    <button class="restart-btn" onclick="startQuiz()">Recommencer le Quiz</button>
+                </div>
+            `;
+        }
+
+        // Lancer le quiz au chargement
+        startQuiz();
+    </script>
+</body>
+</html>
